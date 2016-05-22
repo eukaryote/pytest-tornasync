@@ -10,6 +10,13 @@ import pytest_tornasync
 here_dir = os.path.abspath(os.path.dirname(__file__))
 
 
+# require python-3.5+, since we only support the native coroutine 'async def'
+# style for tests that were introduced in python 3.5.
+if sys.version_info < (3, 5):
+    print("pytest-tornasync requires Python 3.5 or newer")
+    sys.exit(1)
+
+
 def read(*filenames):
     buf = []
     for filename in filenames:
@@ -57,7 +64,7 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'License :: OSI Approved :: MIT License',
         'Environment :: Console',
-        'Development Status :: 4 - Beta',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Framework :: Pytest',
         'Topic :: Software Development :: Testing',
