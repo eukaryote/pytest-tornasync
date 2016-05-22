@@ -1,4 +1,6 @@
-from pytest_tornasync.plugin import *
+import pytest
+
+import tornado.web
 
 from test import MainHandler
 
