@@ -23,18 +23,20 @@ def get_test_timeout(pyfuncitem):
 
 def pytest_addoption(parser):
     parser.addoption('--async-test-timeout', type=float,
-                     help='timeout in seconds before failing the test')
+                     help=('timeout in seconds before failing the test '
+                           '(default is no timeout)'))
     parser.addoption('--app-fixture', default='app',
-                     help='fixture name returning a tornado application')
+                     help=('fixture name returning a tornado application '
+                           '(default is "app")'))
 
 
-@pytest.hookimpl(tryfirst=True)
+@pytest.mark.tryfirst
 def pytest_pycollect_makeitem(collector, name, obj):
     if collector.funcnamefilter(name) and iscoroutinefunction(obj):
         return list(collector._genfunctions(name, obj))
 
 
-@pytest.hookimpl(tryfirst=True)
+@pytest.mark.tryfirst
 def pytest_pyfunc_call(pyfuncitem):
     try:
         event_loop = pyfuncitem.funcargs['io_loop']
@@ -88,20 +90,25 @@ def io_loop_asyncio():
 @pytest.fixture
 def io_loop(io_loop_tornado):
     """
-    Alias for `io_loop_tornado`, but may be overridden to use
-    `io_loop_asyncio`.
+    Alias for `io_loop_tornado`, by default.
+
+    You may define an `io_loop` that uses the `io_loop_asyncio` fixture to
+    use an asyncio-backed Tornado event loop.
     """
     return io_loop_tornado
 
 
 @pytest.fixture
-def unused_port():
+def http_server_port():
+    """
+    Port used by `http_server`.
+    """
     return tornado.testing.bind_unused_port()
 
 
 @pytest.yield_fixture
-def http_server(request, io_loop, unused_port):
-    """Start a tornado HTTP server.
+def http_server(request, io_loop, http_server_port):
+    """Start a tornado HTTP server that listens on all available interfaces.
 
     You must create an `app` fixture, which returns
     the `tornado.web.Application` to be tested.
@@ -111,7 +118,7 @@ def http_server(request, io_loop, unused_port):
     """
     http_app = request.getfuncargvalue(request.config.option.app_fixture)
     server = tornado.httpserver.HTTPServer(http_app, io_loop=io_loop)
-    server.add_socket(unused_port[0])
+    server.add_socket(http_server_port[0])
 
     yield server
 
