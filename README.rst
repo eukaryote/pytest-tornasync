@@ -19,40 +19,74 @@ like ``gen_test``. Defining a test with ``async def`` is all that is required.
 Usage
 -----
 
+Define an ``app`` fixture:
+
+.. code-block:: python
+
+    import pytest
+
+
+    @pytest.fixture
+    def app():
+        import yourapp
+        return yourapp.make_app()  # a tornado.web.Application
+
+
+Create tests as native coroutines using Python 3.5+ ``async def``:
+
+.. code-block:: python
+
+    async def test_app(http_server_client):
+        resp = await http_server_client.fetch('/')
+        assert resp.code == 200
+        # ...
+
+
+If you want to use the Tornado 3.2+ ``asyncio`` event loop, redefine the
+``io_loop`` fixture in your ``conftext.py`` as follows:
+
+.. code-block:: python
+
+    import pytest
+
+
+    @pytest.fixture
+    def io_loop(io_loop_asyncio)
+        return io_loop_asyncio
+
+
+
+Fixtures
+--------
+
 When the plugin is installed, then ``py.test --fixtures`` will show
 the fixtures that are available::
 
-    -------------------- fixtures defined from pytest_tornasync.plugin --------------------
-    http_server_port
-        Port used by `http_server`.
-    http_server
-        Start a tornado HTTP server that listens on all available interfaces.
+http_server_port
+    Port used by `http_server`.
+http_server
+    Start a tornado HTTP server that listens on all available interfaces.
 
-        You must create an `app` fixture, which returns
-        the `tornado.web.Application` to be tested.
+    You must create an `app` fixture, which returns
+    the `tornado.web.Application` to be tested.
 
-        Raises:
-        FixtureLookupError: tornado application fixture not found
-    http_server_client
-        Create an asynchronous HTTP client that can fetch from `http_server`.
-    http_client
-        Create an asynchronous HTTP client that can fetch from anywhere.
-    io_loop_tornado
-        Create a new `tornado.ioloop.IOLoop` for each test case.
-    io_loop_asyncio
-        Create a new `tornado.platform.asyncio.AsyncIOLoop` for each test case.
-    io_loop
-        Alias for `io_loop_tornado`, by default.
+    Raises:
+    FixtureLookupError: tornado application fixture not found
+http_server_client
+    Create an asynchronous HTTP client that can fetch from `http_server`.
+http_client
+    Create an asynchronous HTTP client that can fetch from anywhere.
+io_loop_tornado
+    Create a new `tornado.ioloop.IOLoop` for each test case.
+io_loop_asyncio
+    Create a new `tornado.platform.asyncio.AsyncIOLoop` for each test case.
+io_loop
+    Alias for `io_loop_tornado`, by default.
 
-        You may define an `io_loop` that uses the `io_loop_asyncio` fixture to
-        use an asyncio-backed Tornado event loop.
+    You may define an `io_loop` that uses the `io_loop_asyncio` fixture to
+    use an asyncio-backed Tornado event loop.
 
 
-The minimal setup is to define an ``app`` fixture that provides a Tornado app.
-
-Test cases must be native coroutines defined using `async def` if they
-should be run using the event loop provided by the `io_loop` fixture, but
-the `io_loop` and other async helper fixtures do not need to be used.
 
 Examples
 --------
