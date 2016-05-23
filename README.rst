@@ -16,6 +16,16 @@ coroutine with ``@pytest.mark.gen_test``. This plugin doesn't have anything
 like ``gen_test``. Defining a test with ``async def`` is all that is required.
 
 
+Installation
+------------
+
+Install using pip, which must be run with Python 3.5+:
+
+.. code-block:: sh
+
+    pip install pytest-tornasync
+
+
 Usage
 -----
 
