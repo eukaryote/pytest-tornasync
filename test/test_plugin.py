@@ -1,4 +1,3 @@
-import json
 import time
 
 
@@ -57,27 +56,27 @@ async def test_pause(io_loop):
     assert elapsed >= PAUSE_TIME
 
 
-async def test_http_client_fetch1(http_client):
-    resp = await http_client.fetch('http://httpbin.org/headers')
+async def test_http_client_fetch(http_client, http_server, http_server_port):
+    url = 'http://localhost:%s/' % http_server_port[1]
+    resp = await http_client.fetch(url)
     assert resp.code == 200
-    data = json.loads(resp.body.decode('utf8'))
-    assert data == {
-        'headers': {
-            'Host': 'httpbin.org',
-            'Accept-Encoding': 'gzip'
-        }
-    }
-
-
-async def test_http_client_fetch2(http_client):
-    resp = await http_client.fetch('http://httpbin.org/status/204')
-    assert resp.code == 204
+    assert resp.body.decode('utf8') == MESSAGE
 
 
 async def test_http_server_client_fetch(http_server_client):
     resp = await http_server_client.fetch('/')
     assert resp.code == 200
     assert resp.body.decode('utf8') == MESSAGE
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_expected_noncoroutine_fail():
+    raise ValueError()
+
+
+@pytest.mark.xfail(raises=ValueError)
+async def test_expected_coroutine_fail():
+    raise ValueError()
 
 
 @pytest.mark.xfail(strict=True, raises=tornado.ioloop.TimeoutError)

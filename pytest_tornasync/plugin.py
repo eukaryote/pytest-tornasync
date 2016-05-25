@@ -38,17 +38,32 @@ def pytest_pycollect_makeitem(collector, name, obj):
 
 @pytest.mark.tryfirst
 def pytest_pyfunc_call(pyfuncitem):
-    try:
-        event_loop = pyfuncitem.funcargs['io_loop']
-    except KeyError:
-        return True
-
-    if not isinstance(event_loop, tornado.ioloop.IOLoop):
-        raise TypeError("unsupported event loop type: %s" % type(event_loop))
-
     funcargs = pyfuncitem.funcargs
     testargs = {arg: funcargs[arg]
                 for arg in pyfuncitem._fixtureinfo.argnames}
+
+    if not iscoroutinefunction(pyfuncitem.obj):
+        pyfuncitem.obj(**testargs)
+        return True
+
+    try:
+        event_loop = pyfuncitem.funcargs['io_loop']
+    except KeyError:
+        # TODO: figure out best way to get the io_loop fixture, even if not
+        # used by this coroutine, and correctly run it regardless of whether
+        # it's a fixture or yield fixture (including pre-init and post-init)
+        coro = pyfuncitem.obj(**testargs)
+        loop = None
+        while not isinstance(loop, tornado.ioloop.IOLoop):
+            loop = next(io_loop())
+        try:
+            loop.run_sync(lambda: coro, timeout=get_test_timeout(pyfuncitem))
+        finally:
+            _loop_destroy(loop)
+        return True
+
+    if not isinstance(event_loop, tornado.ioloop.IOLoop):
+        raise TypeError("unsupported event loop:  %s" % type(event_loop))
 
     event_loop.run_sync(lambda: pyfuncitem.obj(**testargs),
                         timeout=get_test_timeout(pyfuncitem))
@@ -87,15 +102,8 @@ def io_loop_asyncio():
     _loop_destroy(io_loop)
 
 
-@pytest.fixture
-def io_loop(io_loop_tornado):
-    """
-    Alias for `io_loop_tornado`, by default.
-
-    You may define an `io_loop` that uses the `io_loop_asyncio` fixture to
-    use an asyncio-backed Tornado event loop.
-    """
-    return io_loop_tornado
+# io_loop uses the plain Tornado event loop by default
+io_loop = io_loop_tornado
 
 
 @pytest.fixture
