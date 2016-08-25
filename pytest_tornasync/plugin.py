@@ -158,7 +158,7 @@ class AsyncHTTPServerClient(tornado.simple_httpclient.SimpleAsyncHTTPClient):
             return sock.getsockname()[1]
 
     def get_url(self, path):
-        return '%s://localhost:%s%s' % (self.get_protocol(),
+        return '%s://127.0.0.1:%s%s' % (self.get_protocol(),
                                         self.get_http_port(), path)
 
 
