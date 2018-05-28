@@ -6,7 +6,7 @@ pytest-tornasync
     :target: https://travis-ci.org/eukaryote/pytest-tornasync
 
 A simple pytest plugin that provides some helpful fixtures for testing
-Tornado (version 5.0 and newer)  apps and easy handling of plain
+Tornado (version 5.0 or newer)  apps and easy handling of plain
 (undecoratored) native coroutine tests (Python 3.5+).
 
 Why another Tornado pytest plugin when the excellent ``pytest-tornado`` already
