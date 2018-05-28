@@ -5,10 +5,6 @@ pytest-tornasync
 .. image:: https://travis-ci.org/eukaryote/pytest-tornasync.svg?branch=master
     :target: https://travis-ci.org/eukaryote/pytest-tornasync
 
-.. image:: https://img.shields.io/pypi/pyversions/pytest-tornasync.svg
-    :target: https://pypi.org/project/pytest-tornasync/
-
-
 A simple pytest plugin that provides some helpful fixtures for testing
 Tornado (version 5.0 and newer)  apps and easy handling of plain
 (undecoratored) native coroutine tests (Python 3.5+).
