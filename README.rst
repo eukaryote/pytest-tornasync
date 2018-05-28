@@ -56,7 +56,7 @@ Fixtures
 --------
 
 When the plugin is installed, then ``pytest --fixtures`` will show
-the fixtures that are available::
+the fixtures that are available:
 
 http_server_port
     Port used by `http_server`.
