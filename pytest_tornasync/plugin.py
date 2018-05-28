@@ -1,5 +1,6 @@
 import inspect
 
+import tornado
 import tornado.ioloop
 import tornado.testing
 import tornado.simple_httpclient
@@ -11,6 +12,18 @@ try:
 except AttributeError:
     def iscoroutinefunction(obj):
         return False
+
+
+def _tornado5():
+    return tornado.version_info >= (5, )
+
+
+def _current():
+    return tornado.ioloop.IOLoop.current()
+
+
+def _http_server_loop(http_server):
+    return tornado.ioloop.IOLoop.current() if _tornado5() else http_server.io_loop
 
 
 def get_test_timeout(pyfuncitem):
@@ -78,8 +91,7 @@ def _loop_create(klass):
 
 def _loop_destroy(loop):
     loop.clear_current()
-    if not type(loop).initialized() or loop is not type(loop).instance():
-        loop.close(all_fds=True)
+    loop.close(all_fds=True)
 
 
 @pytest.yield_fixture
@@ -125,7 +137,8 @@ def http_server(request, io_loop, http_server_port):
         FixtureLookupError: tornado application fixture not found
     """
     http_app = request.getfuncargvalue(request.config.option.app_fixture)
-    server = tornado.httpserver.HTTPServer(http_app, io_loop=io_loop)
+    kwargs = {} if _tornado5() else {'io_loop': io_loop}
+    server = tornado.httpserver.HTTPServer(http_app, **kwargs)
     server.add_socket(http_server_port[0])
 
     yield server
@@ -139,8 +152,9 @@ def http_server(request, io_loop, http_server_port):
 
 class AsyncHTTPServerClient(tornado.simple_httpclient.SimpleAsyncHTTPClient):
 
-    def initialize(self, io_loop, *, http_server=None):
-        super().initialize(io_loop)
+    def initialize(self, io_loop=None, *, http_server=None):
+        args = (io_loop or _current(),) if not _tornado5() else ()
+        super().initialize(*args)
         self._http_server = http_server
 
     def fetch(self, path, **kwargs):
@@ -167,8 +181,7 @@ def http_server_client(http_server):
     """
     Create an asynchronous HTTP client that can fetch from `http_server`.
     """
-    client = AsyncHTTPServerClient(http_server.io_loop,
-                                   http_server=http_server)
+    client = AsyncHTTPServerClient(http_server=http_server)
     yield client
     client.close()
 
@@ -178,6 +191,6 @@ def http_client(http_server):
     """
     Create an asynchronous HTTP client that can fetch from anywhere.
     """
-    client = tornado.httpclient.AsyncHTTPClient(http_server.io_loop)
+    client = tornado.httpclient.AsyncHTTPClient(_http_server_loop(http_server))
     yield client
     client.close()

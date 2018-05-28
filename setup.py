@@ -52,10 +52,10 @@ setup(
     platforms='any',
     cmdclass={'test': PyTest},
     install_requires=[
-        'pytest>=2.4',
-        'tornado>=4.0',
+        'pytest>=3.0',
+        'tornado>=4.5',
     ],
-    tests_require=['pytest>=2.4'],
+    tests_require=['pytest>=3.0'],
     test_suite='tests',
     entry_points={
         'pytest11': ['tornado = pytest_tornasync.plugin'],
