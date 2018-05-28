@@ -1,6 +1,5 @@
 import time
 
-
 import tornado.gen
 import tornado.ioloop
 import tornado.web
@@ -10,9 +9,11 @@ import pytest
 from test import MESSAGE, PAUSE_TIME
 
 
-@pytest.fixture(params=['io_loop_tornado', 'io_loop_asyncio'])
-def io_loop(request):
-    return request.getfuncargvalue(request.param)
+class ExpectedError(RuntimeError):
+
+    """
+    A dedicated error type for raising from tests to verify a fixture was run.
+    """
 
 
 @pytest.fixture
@@ -44,7 +45,12 @@ def test_plain_function_with_fixture(mynumber):
     assert mynumber == 42
 
 
-async def nontest(io_loop):
+async def nontest_coroutine(io_loop):
+    # Non-test coroutine function that shouldn't be run
+    assert False
+
+
+def nontest_function(io_loop):
     # Non-test function that shouldn't be run
     assert False
 
@@ -69,14 +75,21 @@ async def test_http_server_client_fetch(http_server_client):
     assert resp.body.decode('utf8') == MESSAGE
 
 
-@pytest.mark.xfail(raises=ValueError)
+@pytest.mark.xfail(raises=ExpectedError)
 def test_expected_noncoroutine_fail():
-    raise ValueError()
+    raise ExpectedError()
 
 
-@pytest.mark.xfail(raises=ValueError)
-async def test_expected_coroutine_fail():
-    raise ValueError()
+@pytest.mark.xfail(raises=ExpectedError)
+async def test_expected_coroutine_fail_io_loop(io_loop):
+    """A coroutine test with an io_loop param."""
+    raise ExpectedError()
+
+
+@pytest.mark.xfail(raises=ExpectedError)
+async def test_expected_coroutine_fail_no_io_loop():
+    """A coroutine test without an io_loop param."""
+    raise ExpectedError()
 
 
 @pytest.mark.xfail(strict=True, raises=tornado.ioloop.TimeoutError)

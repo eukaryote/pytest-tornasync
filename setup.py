@@ -20,8 +20,12 @@ if sys.version_info < (3, 5):
 def read(*filenames):
     buf = []
     for filename in filenames:
-        with open(os.path.join(here_dir, filename)) as f:
-            buf.append(f.read())
+        filepath = os.path.join(here_dir, filename)
+        try:
+            with open(filepath) as f:
+                buf.append(f.read())
+        except FileNotFoundError:
+            pass
     return '\n\n'.join(buf)
 
 
@@ -34,8 +38,11 @@ class PyTest(test):
 
     def run_tests(self):
         import pytest
-        errcode = pytest.main(self.test_args)
-        sys.exit(errcode)
+        status = pytest.main(self.test_args)
+        sys.exit(status)
+
+
+_reqs = ['pytest>=3.0', 'tornado>=5.0']
 
 
 setup(
@@ -51,11 +58,8 @@ setup(
     packages=[pytest_tornasync.__name__],
     platforms='any',
     cmdclass={'test': PyTest},
-    install_requires=[
-        'pytest>=2.4',
-        'tornado>=4.0',
-    ],
-    tests_require=['pytest>=2.4'],
+    install_requires=_reqs,
+    tests_require=_reqs,
     test_suite='tests',
     entry_points={
         'pytest11': ['tornado = pytest_tornasync.plugin'],

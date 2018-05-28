@@ -1,3 +1,4 @@
+from contextlib import closing
 import inspect
 
 import tornado.ioloop
@@ -39,71 +40,37 @@ def pytest_pycollect_makeitem(collector, name, obj):
 @pytest.mark.tryfirst
 def pytest_pyfunc_call(pyfuncitem):
     funcargs = pyfuncitem.funcargs
-    testargs = {arg: funcargs[arg]
-                for arg in pyfuncitem._fixtureinfo.argnames}
+    testargs = {arg: funcargs[arg] for arg in pyfuncitem._fixtureinfo.argnames}
 
     if not iscoroutinefunction(pyfuncitem.obj):
         pyfuncitem.obj(**testargs)
         return True
 
     try:
-        event_loop = pyfuncitem.funcargs['io_loop']
+        event_loop = funcargs['io_loop']
     except KeyError:
-        # TODO: figure out best way to get the io_loop fixture, even if not
-        # used by this coroutine, and correctly run it regardless of whether
-        # it's a fixture or yield fixture (including pre-init and post-init)
-        coro = pyfuncitem.obj(**testargs)
-        loop = None
-        while not isinstance(loop, tornado.ioloop.IOLoop):
-            loop = next(io_loop())
-        try:
-            loop.run_sync(lambda: coro, timeout=get_test_timeout(pyfuncitem))
-        finally:
-            _loop_destroy(loop)
-        return True
+        event_loop = next(io_loop())
 
     if not isinstance(event_loop, tornado.ioloop.IOLoop):
         raise TypeError("unsupported event loop:  %s" % type(event_loop))
 
-    event_loop.run_sync(lambda: pyfuncitem.obj(**testargs),
-                        timeout=get_test_timeout(pyfuncitem))
+    event_loop.run_sync(
+        lambda: pyfuncitem.obj(**testargs),
+        timeout=get_test_timeout(pyfuncitem),
+    )
     return True
 
 
-def _loop_create(klass):
-    loop = klass()
-    loop.make_current()
-    return loop
-
-
-def _loop_destroy(loop):
-    loop.clear_current()
-    if not type(loop).initialized() or loop is not type(loop).instance():
-        loop.close(all_fds=True)
-
-
-@pytest.yield_fixture
-def io_loop_tornado():
+@pytest.fixture
+def io_loop():
     """
     Create a new `tornado.ioloop.IOLoop` for each test case.
     """
-    io_loop = _loop_create(tornado.ioloop.IOLoop)
-    yield io_loop
-    _loop_destroy(io_loop)
-
-
-@pytest.yield_fixture
-def io_loop_asyncio():
-    """
-    Create a new `tornado.platform.asyncio.AsyncIOLoop` for each test case.
-    """
-    io_loop = _loop_create(tornado.platform.asyncio.AsyncIOLoop)
-    yield io_loop
-    _loop_destroy(io_loop)
-
-
-# io_loop uses the plain Tornado event loop by default
-io_loop = io_loop_tornado
+    loop = tornado.ioloop.IOLoop()
+    loop.make_current()
+    yield loop
+    loop.clear_current()
+    loop.close(all_fds=True)
 
 
 @pytest.fixture
@@ -125,7 +92,7 @@ def http_server(request, io_loop, http_server_port):
         FixtureLookupError: tornado application fixture not found
     """
     http_app = request.getfuncargvalue(request.config.option.app_fixture)
-    server = tornado.httpserver.HTTPServer(http_app, io_loop=io_loop)
+    server = tornado.httpserver.HTTPServer(http_app)
     server.add_socket(http_server_port[0])
 
     yield server
@@ -139,8 +106,8 @@ def http_server(request, io_loop, http_server_port):
 
 class AsyncHTTPServerClient(tornado.simple_httpclient.SimpleAsyncHTTPClient):
 
-    def initialize(self, io_loop, *, http_server=None):
-        super().initialize(io_loop)
+    def initialize(self, *, http_server=None):
+        super().initialize()
         self._http_server = http_server
 
     def fetch(self, path, **kwargs):
@@ -162,22 +129,19 @@ class AsyncHTTPServerClient(tornado.simple_httpclient.SimpleAsyncHTTPClient):
                                         self.get_http_port(), path)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def http_server_client(http_server):
     """
     Create an asynchronous HTTP client that can fetch from `http_server`.
     """
-    client = AsyncHTTPServerClient(http_server.io_loop,
-                                   http_server=http_server)
-    yield client
-    client.close()
+    with closing(AsyncHTTPServerClient(http_server=http_server)) as client:
+        yield client
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def http_client(http_server):
     """
     Create an asynchronous HTTP client that can fetch from anywhere.
     """
-    client = tornado.httpclient.AsyncHTTPClient(http_server.io_loop)
-    yield client
-    client.close()
+    with closing(tornado.httpclient.AsyncHTTPClient()) as client:
+        yield client
