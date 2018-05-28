@@ -72,5 +72,8 @@ setup(
         'Intended Audience :: Developers',
         'Framework :: Pytest',
         'Topic :: Software Development :: Testing',
-    ],
+    ] + [
+       ("Programming Language :: Python :: %s" % x)
+       for x in "3 3.4 3.5 3.6 3.7".split()
+    ]
 )
