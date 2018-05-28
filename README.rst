@@ -5,15 +5,19 @@ pytest-tornasync
 .. image:: https://travis-ci.org/eukaryote/pytest-tornasync.svg?branch=master
     :target: https://travis-ci.org/eukaryote/pytest-tornasync
 
+.. image:: https://img.shields.io/pypi/pyversions/pytest-tornasync.svg
+    :target: https://pypi.org/project/pytest-tornasync/
+
 
 A simple pytest plugin that provides some helpful fixtures for testing
-Tornado apps and easy handling of plain (undecoratored) native coroutine tests
-(Python 3.5+).
+Tornado (version 5.0 and newer)  apps and easy handling of plain
+(undecoratored) native coroutine tests (Python 3.5+).
 
 Why another Tornado pytest plugin when the excellent ``pytest-tornado`` already
 exists? The main reason is that I didn't want to have to decorate every test
 coroutine with ``@pytest.mark.gen_test``. This plugin doesn't have anything
-like ``gen_test``. Defining a test with ``async def`` is all that is required.
+like ``gen_test``. Defining a test with ``async def`` and a name that
+begins with ``test_`` is all that is required.
 
 
 Installation
@@ -52,24 +56,10 @@ Create tests as native coroutines using Python 3.5+ ``async def``:
         # ...
 
 
-If you want to use the Tornado 3.2+ ``asyncio`` event loop, redefine the
-``io_loop`` fixture in your ``conftext.py`` as follows:
-
-.. code-block:: python
-
-    import pytest
-
-
-    @pytest.fixture
-    def io_loop(io_loop_asyncio)
-        return io_loop_asyncio
-
-
-
 Fixtures
 --------
 
-When the plugin is installed, then ``py.test --fixtures`` will show
+When the plugin is installed, then ``pytest --fixtures`` will show
 the fixtures that are available::
 
 http_server_port
@@ -86,15 +76,8 @@ http_server_client
     Create an asynchronous HTTP client that can fetch from `http_server`.
 http_client
     Create an asynchronous HTTP client that can fetch from anywhere.
-io_loop_tornado
-    Create a new `tornado.ioloop.IOLoop` for each test case.
-io_loop_asyncio
-    Create a new `tornado.platform.asyncio.AsyncIOLoop` for each test case.
 io_loop
-    Alias for `io_loop_tornado`, by default.
-
-    You may define an `io_loop` that uses the `io_loop_asyncio` fixture to
-    use an asyncio-backed Tornado event loop.
+    Create a new `tornado.ioloop.IOLoop` for each test case.
 
 
 
