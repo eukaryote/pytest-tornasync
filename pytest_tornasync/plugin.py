@@ -1,17 +1,12 @@
 from contextlib import closing
 import inspect
+from inspect import iscoroutinefunction
 
 import tornado.ioloop
 import tornado.testing
 import tornado.simple_httpclient
 
 import pytest
-
-try:
-    iscoroutinefunction = inspect.iscoroutinefunction
-except AttributeError:
-    def iscoroutinefunction(obj):
-        return False
 
 
 def get_test_timeout(pyfuncitem):
