@@ -1,79 +1,78 @@
-import sys
+import codecs
 import os
+import re
 
-from setuptools import setup
-from setuptools.command.test import test
-
-import pytest_tornasync
+from setuptools import setup, find_packages
 
 
-here_dir = os.path.abspath(os.path.dirname(__file__))
+###################################################################
+
+NAME = "pytest-tornasync"
+PACKAGES = find_packages(where="src")
+META_PATH = os.path.join("src", "pytest_tornasync", "__init__.py")
+KEYWORDS = ["testing", "pytest", "tornado"]
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+INSTALL_REQUIRES = []
+
+###################################################################
+
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 
-# require python-3.5+, since we only support the native coroutine 'async def'
-# style for tests that were introduced in python 3.5.
-if sys.version_info < (3, 5):
-    print("pytest-tornasync requires Python 3.5 or newer")
-    sys.exit(1)
+def read(*parts):
+    """
+    Build an absolute path from *parts* and and return the contents of the
+    resulting file.  Assume UTF-8 encoding.
+    """
+    with codecs.open(os.path.join(HERE, *parts), "rb", "utf-8") as f:
+        return f.read()
 
 
-def read(*filenames):
-    buf = []
-    for filename in filenames:
-        filepath = os.path.join(here_dir, filename)
-        try:
-            with open(filepath) as f:
-                buf.append(f.read())
-        except FileNotFoundError:
-            pass
-    return '\n\n'.join(buf)
+META_FILE = read(META_PATH)
 
 
-class PyTest(test):
-
-    def finalize_options(self):
-        test.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import pytest
-        status = pytest.main(self.test_args)
-        sys.exit(status)
-
-
-_reqs = ['pytest>=3.0', 'tornado>=5.0']
+def find_meta(meta):
+    """
+    Extract __*meta*__ from META_FILE.
+    """
+    meta_match = re.search(
+        r"^__{meta}__ = ['\"]([^'\"]*)['\"]".format(meta=meta), META_FILE, re.M
+    )
+    if meta_match:
+        return meta_match.group(1)
+    raise RuntimeError("Unable to find __{meta}__ string.".format(meta=meta))
 
 
-setup(
-    name='pytest-tornasync',
-    version=pytest_tornasync.__version__,
-    license='http://www.opensource.org/licenses/mit-license.php',
-    url='https://github.com/eukaryote/pytest-tornasync',
-    description='py.test plugin for testing Python 3.5+ Tornado code',
-    long_description=read('README.rst', 'CHANGES.rst'),
-    keywords='testing py.test tornado',
-    author='Calvin Smith',
-    author_email='sapientdust+pytest-tornasync@gmail.com',
-    packages=[pytest_tornasync.__name__],
-    platforms='any',
-    cmdclass={'test': PyTest},
-    install_requires=_reqs,
-    tests_require=_reqs,
-    test_suite='tests',
-    entry_points={
-        'pytest11': ['tornado = pytest_tornasync.plugin'],
-    },
-    classifiers=[
-        'Programming Language :: Python :: 3 :: Only',
-        'License :: OSI Approved :: MIT License',
-        'Environment :: Console',
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Developers',
-        'Framework :: Pytest',
-        'Topic :: Software Development :: Testing',
-    ] + [
-       ("Programming Language :: Python :: %s" % x)
-       for x in "3 3.4 3.5 3.6 3.7".split()
-    ]
-)
+if __name__ == "__main__":
+    setup(
+        name=NAME,
+        description=find_meta("description"),
+        license=find_meta("license"),
+        url=find_meta("uri"),
+        version=find_meta("version"),
+        author=find_meta("author"),
+        author_email=find_meta("email"),
+        maintainer=find_meta("author"),
+        maintainer_email=find_meta("email"),
+        keywords=KEYWORDS,
+        long_description=read("README.rst"),
+        packages=PACKAGES,
+        package_dir={"": "src"},
+        zip_safe=False,
+        classifiers=CLASSIFIERS,
+        install_requires=INSTALL_REQUIRES,
+    )

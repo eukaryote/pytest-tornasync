@@ -1,3 +1,5 @@
+import pytest_cov
+
 import time
 
 import tornado.gen
@@ -5,6 +7,11 @@ import tornado.ioloop
 import tornado.web
 
 import pytest
+
+# import pytest_tornasync
+
+# assert pytest_tornasync.__version__
+# assert pytest_tornasync.__version_info__
 
 from test import MESSAGE, PAUSE_TIME
 
@@ -63,16 +70,16 @@ async def test_pause(io_loop):
 
 
 async def test_http_client_fetch(http_client, http_server, http_server_port):
-    url = 'http://localhost:%s/' % http_server_port[1]
+    url = "http://localhost:%s/" % http_server_port[1]
     resp = await http_client.fetch(url)
     assert resp.code == 200
-    assert resp.body.decode('utf8') == MESSAGE
+    assert resp.body.decode("utf8") == MESSAGE
 
 
 async def test_http_server_client_fetch(http_server_client):
-    resp = await http_server_client.fetch('/')
+    resp = await http_server_client.fetch("/")
     assert resp.code == 200
-    assert resp.body.decode('utf8') == MESSAGE
+    assert resp.body.decode("utf8") == MESSAGE
 
 
 @pytest.mark.xfail(raises=ExpectedError)
@@ -89,6 +96,9 @@ async def test_expected_coroutine_fail_io_loop(io_loop):
 @pytest.mark.xfail(raises=ExpectedError)
 async def test_expected_coroutine_fail_no_io_loop():
     """A coroutine test without an io_loop param."""
+    import asyncio
+
+    await asyncio.sleep(0.0)
     raise ExpectedError()
 
 
@@ -96,3 +106,8 @@ async def test_expected_coroutine_fail_no_io_loop():
 @pytest.mark.timeout(seconds=0.1)
 async def test_timeout(io_loop):
     await _pause_coro(0.15)
+
+
+def test_version_info():
+    # assert len(pytest_tornasync.__version_info__) >= 3
+    pass
