@@ -1,6 +1,6 @@
 import tornado.web
 
-MESSAGE = 'Hello, world!'
+MESSAGE = "Hello, world!"
 PAUSE_TIME = 0.05
 
 

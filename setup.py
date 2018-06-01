@@ -1,10 +1,8 @@
 import sys
 import os
 
-from setuptools import setup
+from setuptools import find_packages, setup
 from setuptools.command.test import test
-
-import pytest_tornasync
 
 
 here_dir = os.path.abspath(os.path.dirname(__file__))
@@ -47,7 +45,7 @@ _reqs = ['pytest>=3.0', 'tornado>=5.0']
 
 setup(
     name='pytest-tornasync',
-    version=pytest_tornasync.__version__,
+    version='0.6.0',
     license='http://www.opensource.org/licenses/mit-license.php',
     url='https://github.com/eukaryote/pytest-tornasync',
     description='py.test plugin for testing Python 3.5+ Tornado code',
@@ -55,12 +53,13 @@ setup(
     keywords='testing py.test tornado',
     author='Calvin Smith',
     author_email='sapientdust+pytest-tornasync@gmail.com',
-    packages=[pytest_tornasync.__name__],
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
     platforms='any',
     cmdclass={'test': PyTest},
     install_requires=_reqs,
     tests_require=_reqs,
-    test_suite='tests',
+    test_suite='test',
     entry_points={
         'pytest11': ['tornado = pytest_tornasync.plugin'],
     },
@@ -74,6 +73,6 @@ setup(
         'Topic :: Software Development :: Testing',
     ] + [
        ("Programming Language :: Python :: %s" % x)
-       for x in "3 3.4 3.5 3.6 3.7".split()
+       for x in "3 3.5 3.6 3.7".split()
     ]
 )

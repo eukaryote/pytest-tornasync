@@ -1,4 +1,4 @@
-from contextlib import closing
+from contextlib import closing, contextmanager
 import inspect
 from inspect import iscoroutinefunction
 
@@ -11,19 +11,23 @@ import pytest
 
 def get_test_timeout(pyfuncitem):
     timeout = pyfuncitem.config.option.async_test_timeout
-    marker = pyfuncitem.get_marker('timeout')
+    marker = pyfuncitem.get_closest_marker("timeout")
     if marker:
-        timeout = marker.kwargs.get('seconds', timeout)
+        timeout = marker.kwargs.get("seconds", timeout)
     return timeout
 
 
 def pytest_addoption(parser):
-    parser.addoption('--async-test-timeout', type=float,
-                     help=('timeout in seconds before failing the test '
-                           '(default is no timeout)'))
-    parser.addoption('--app-fixture', default='app',
-                     help=('fixture name returning a tornado application '
-                           '(default is "app")'))
+    parser.addoption(
+        "--async-test-timeout",
+        type=float,
+        help=("timeout in seconds before failing the test " "(default is no timeout)"),
+    )
+    parser.addoption(
+        "--app-fixture",
+        default="app",
+        help=("fixture name returning a tornado application " '(default is "app")'),
+    )
 
 
 @pytest.mark.tryfirst
@@ -42,16 +46,12 @@ def pytest_pyfunc_call(pyfuncitem):
         return True
 
     try:
-        event_loop = funcargs['io_loop']
+        loop = funcargs["io_loop"]
     except KeyError:
-        event_loop = next(io_loop())
+        loop = tornado.ioloop.IOLoop.current()
 
-    if not isinstance(event_loop, tornado.ioloop.IOLoop):
-        raise TypeError("unsupported event loop:  %s" % type(event_loop))
-
-    event_loop.run_sync(
-        lambda: pyfuncitem.obj(**testargs),
-        timeout=get_test_timeout(pyfuncitem),
+    loop.run_sync(
+        lambda: pyfuncitem.obj(**testargs), timeout=get_test_timeout(pyfuncitem)
     )
     return True
 
@@ -59,7 +59,7 @@ def pytest_pyfunc_call(pyfuncitem):
 @pytest.fixture
 def io_loop():
     """
-    Create a new `tornado.ioloop.IOLoop` for each test case.
+    Create new io loop for each test, and tear it down after.
     """
     loop = tornado.ioloop.IOLoop()
     loop.make_current()
@@ -86,7 +86,7 @@ def http_server(request, io_loop, http_server_port):
     Raises:
         FixtureLookupError: tornado application fixture not found
     """
-    http_app = request.getfuncargvalue(request.config.option.app_fixture)
+    http_app = request.getfixturevalue(request.config.option.app_fixture)
     server = tornado.httpserver.HTTPServer(http_app)
     server.add_socket(http_server_port[0])
 
@@ -94,13 +94,14 @@ def http_server(request, io_loop, http_server_port):
 
     server.stop()
 
-    if hasattr(server, 'close_all_connections'):
-        io_loop.run_sync(server.close_all_connections,
-                         timeout=request.config.option.async_test_timeout)
+    if hasattr(server, "close_all_connections"):
+        io_loop.run_sync(
+            server.close_all_connections,
+            timeout=request.config.option.async_test_timeout,
+        )
 
 
 class AsyncHTTPServerClient(tornado.simple_httpclient.SimpleAsyncHTTPClient):
-
     def initialize(self, *, http_server=None):
         super().initialize()
         self._http_server = http_server
@@ -113,15 +114,14 @@ class AsyncHTTPServerClient(tornado.simple_httpclient.SimpleAsyncHTTPClient):
         return super().fetch(self.get_url(path), **kwargs)
 
     def get_protocol(self):
-        return 'http'
+        return "http"
 
     def get_http_port(self):
         for sock in self._http_server._sockets.values():
             return sock.getsockname()[1]
 
     def get_url(self, path):
-        return '%s://127.0.0.1:%s%s' % (self.get_protocol(),
-                                        self.get_http_port(), path)
+        return "%s://127.0.0.1:%s%s" % (self.get_protocol(), self.get_http_port(), path)
 
 
 @pytest.fixture

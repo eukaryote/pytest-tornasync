@@ -4,6 +4,8 @@ import tornado.web
 
 from test import MainHandler
 
+pytest_plugins = ["pytester"]
+
 
 @pytest.fixture
 def app():

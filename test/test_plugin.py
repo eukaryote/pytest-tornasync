@@ -22,7 +22,6 @@ def mynumber():
 
 
 class MainHandler(tornado.web.RequestHandler):
-
     def get(self):
         self.write(MESSAGE)
 
@@ -63,16 +62,16 @@ async def test_pause(io_loop):
 
 
 async def test_http_client_fetch(http_client, http_server, http_server_port):
-    url = 'http://localhost:%s/' % http_server_port[1]
+    url = "http://localhost:%s/" % http_server_port[1]
     resp = await http_client.fetch(url)
     assert resp.code == 200
-    assert resp.body.decode('utf8') == MESSAGE
+    assert resp.body.decode("utf8") == MESSAGE
 
 
 async def test_http_server_client_fetch(http_server_client):
-    resp = await http_server_client.fetch('/')
+    resp = await http_server_client.fetch("/")
     assert resp.code == 200
-    assert resp.body.decode('utf8') == MESSAGE
+    assert resp.body.decode("utf8") == MESSAGE
 
 
 @pytest.mark.xfail(raises=ExpectedError)
@@ -81,14 +80,14 @@ def test_expected_noncoroutine_fail():
 
 
 @pytest.mark.xfail(raises=ExpectedError)
-async def test_expected_coroutine_fail_io_loop(io_loop):
-    """A coroutine test with an io_loop param."""
+async def test_expected_coroutine_fail_no_ioloop():
+    """A coroutine test without an io_loop param."""
     raise ExpectedError()
 
 
 @pytest.mark.xfail(raises=ExpectedError)
-async def test_expected_coroutine_fail_no_io_loop():
-    """A coroutine test without an io_loop param."""
+async def test_expected_coroutine_fail_io_loop(io_loop):
+    """A coroutine test with an io_loop param."""
     raise ExpectedError()
 
 
