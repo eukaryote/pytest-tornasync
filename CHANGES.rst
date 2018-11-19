@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.6.0 (2018-11-19)
+------------------
+
+ - minor updates to avoid a pytest warning under pytest 4
+ - repo switch to using a 'src' dir
+
 
 0.5.0 (2018-05-28)
 ------------------
