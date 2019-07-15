@@ -45,7 +45,7 @@ _reqs = ['pytest>=3.0', 'tornado>=5.0']
 
 setup(
     name='pytest-tornasync',
-    version='0.6.0.post1',
+    version='0.6.0.post2',
     license='http://www.opensource.org/licenses/mit-license.php',
     url='https://github.com/eukaryote/pytest-tornasync',
     description='py.test plugin for testing Python 3.5+ Tornado code',
@@ -60,6 +60,7 @@ setup(
     install_requires=_reqs,
     tests_require=_reqs,
     test_suite='test',
+    data_files=[("", ["LICENSE"])],
     entry_points={
         'pytest11': ['tornado = pytest_tornasync.plugin'],
     },
