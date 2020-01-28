@@ -1,0 +1,5 @@
+graft test
+include pytest.ini
+include tox.ini
+
+include *.rst
