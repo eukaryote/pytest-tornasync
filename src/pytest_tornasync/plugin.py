@@ -45,10 +45,11 @@ def pytest_pyfunc_call(pyfuncitem):
         pyfuncitem.obj(**testargs)
         return True
 
-    try:
-        loop = funcargs["io_loop"]
-    except KeyError:
-        loop = tornado.ioloop.IOLoop.current()
+    if funcargs.get("io_loop") or funcargs.get("http_server_client"):
+        return True
+
+    loop = tornado.ioloop.IOLoop()
+    loop.make_current()
 
     loop.run_sync(
         lambda: pyfuncitem.obj(**testargs), timeout=get_test_timeout(pyfuncitem)
